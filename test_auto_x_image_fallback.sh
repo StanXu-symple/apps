@@ -69,6 +69,22 @@ EOF
 pull_attempts=0
 auto_x_compose() {
     pull_attempts=$((pull_attempts + 1))
+    [ "$pull_attempts" -eq 3 ]
+}
+
+auto_x_compose_pull frontend >/dev/null
+test "$(auto_x_get_env BACKEND_IMAGE "$test_dir/.env")" = "ghcr.dockerproxy.net/stanxu-symple/auto-x-backend"
+test "$(auto_x_get_env FRONTEND_IMAGE "$test_dir/.env")" = "ghcr.io/stanxu-symple/auto-x-frontend"
+
+cat > "$test_dir/.env" <<'EOF'
+BACKEND_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-backend
+XHS_WORKER_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-xhs-worker
+FRONTEND_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-frontend
+EOF
+
+pull_attempts=0
+auto_x_compose() {
+    pull_attempts=$((pull_attempts + 1))
     [ "$pull_attempts" -eq 1 ] && return 137
     return 0
 }
