@@ -12,6 +12,7 @@ extract_function() {
 }
 
 eval "$(extract_function auto_x_show_install_info)"
+eval "$(extract_function docker_app_show_access_info)"
 eval "$(extract_function docker_app_install)"
 
 auto_x_install_dir="/home/docker/auto-x"
@@ -40,6 +41,16 @@ auto_x_selected_args() { AUTO_X_SERVICE_ARGS=(monitor-agent); }
 auto_x_build_from_source() { return 0; }
 auto_x_build_from_source_enabled() { return 1; }
 check_docker_app_ip() { printf '%s\n' "checked-panel"; }
+auto_x_load_selected_services() { :; }
+
+AUTO_X_SERVICES="xhs-worker,monitor-center,monitor-agent"
+worker_menu_output="$(docker_app_show_access_info)"
+[[ "$worker_menu_output" == *"此节点未部署 frontend"* ]]
+[[ "$worker_menu_output" != *"checked-panel"* ]]
+
+AUTO_X_SERVICES="backend,frontend,auth-center,monitor-agent"
+frontend_menu_output="$(docker_app_show_access_info)"
+[[ "$frontend_menu_output" == *"checked-panel"* ]]
 
 AUTO_X_SERVICES="xhs-worker,monitor-center,monitor-agent"
 worker_install_output="$(docker_app_install)"
