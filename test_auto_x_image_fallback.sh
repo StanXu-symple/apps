@@ -40,6 +40,7 @@ auto_x_install_dir="$test_dir"
 auto_x_default_image_registry="ghcr.dockerproxy.net"
 auto_x_image_registry="$auto_x_default_image_registry"
 auto_x_pull_retries=2
+auto_x_pull_timeout=180
 
 cat > "$test_dir/.env" <<'EOF'
 BACKEND_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-backend
@@ -58,6 +59,24 @@ test "$pull_attempts" -eq 3
 test "$(auto_x_get_env BACKEND_IMAGE "$test_dir/.env")" = "ghcr.io/stanxu-symple/auto-x-backend"
 test "$(auto_x_get_env XHS_WORKER_IMAGE "$test_dir/.env")" = "ghcr.io/stanxu-symple/auto-x-xhs-worker"
 test "$(auto_x_get_env FRONTEND_IMAGE "$test_dir/.env")" = "ghcr.io/stanxu-symple/auto-x-frontend"
+
+cat > "$test_dir/.env" <<'EOF'
+BACKEND_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-backend
+XHS_WORKER_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-xhs-worker
+FRONTEND_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-frontend
+EOF
+
+pull_attempts=0
+auto_x_compose() {
+    pull_attempts=$((pull_attempts + 1))
+    [ "$pull_attempts" -eq 1 ] && return 124
+    return 0
+}
+
+auto_x_compose_pull backend xhs-worker >/dev/null 2>&1
+test "$pull_attempts" -eq 2
+test "$(auto_x_get_env BACKEND_IMAGE "$test_dir/.env")" = "ghcr.io/stanxu-symple/auto-x-backend"
+test "$(auto_x_get_env XHS_WORKER_IMAGE "$test_dir/.env")" = "ghcr.io/stanxu-symple/auto-x-xhs-worker"
 
 cat > "$test_dir/.env" <<'EOF'
 BACKEND_IMAGE=registry.example/custom/backend
