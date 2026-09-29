@@ -96,6 +96,28 @@ test "$pull_attempts" -eq 2
 test "$(auto_x_get_env BACKEND_IMAGE "$test_dir/.env")" = "ghcr.io/stanxu-symple/auto-x-backend"
 test "$(auto_x_get_env XHS_WORKER_IMAGE "$test_dir/.env")" = "ghcr.io/stanxu-symple/auto-x-xhs-worker"
 
+auto_x_default_image_registry="ghcr.nju.edu.cn"
+auto_x_image_registry="$auto_x_default_image_registry"
+cat > "$test_dir/.env" <<'EOF'
+BACKEND_IMAGE=ghcr.nju.edu.cn/stanxu-symple/auto-x-backend
+XHS_WORKER_IMAGE=ghcr.nju.edu.cn/stanxu-symple/auto-x-xhs-worker
+FRONTEND_IMAGE=ghcr.nju.edu.cn/stanxu-symple/auto-x-frontend
+EOF
+
+pull_attempts=0
+auto_x_compose() {
+    pull_attempts=$((pull_attempts + 1))
+    [ "$pull_attempts" -eq 1 ] && return 124
+    return 0
+}
+
+auto_x_compose_pull backend xhs-worker >/dev/null 2>&1
+test "$pull_attempts" -eq 2
+test "$(auto_x_get_env BACKEND_IMAGE "$test_dir/.env")" = "ghcr.io/stanxu-symple/auto-x-backend"
+test "$(auto_x_get_env XHS_WORKER_IMAGE "$test_dir/.env")" = "ghcr.io/stanxu-symple/auto-x-xhs-worker"
+
+auto_x_default_image_registry="ghcr.dockerproxy.net"
+auto_x_image_registry="$auto_x_default_image_registry"
 cat > "$test_dir/.env" <<'EOF'
 BACKEND_IMAGE=registry.example/custom/backend
 XHS_WORKER_IMAGE=registry.example/custom/xhs-worker
