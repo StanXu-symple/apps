@@ -28,4 +28,46 @@ esac
 for expected in CAMOUFOX_WORKER_IMAGE docker-compose.camoufox-worker.yml 'target: camoufox-worker' 'camoufox-worker) build_services+='; do
     grep -F "$expected" "$conf" >/dev/null
 done
+
+# A previous non-interactive update may have seeded the browser image with
+# the default mirror. Explicit CN registry selection must repair that value.
+image_functions="$(awk '
+/^auto_x_set_env_if_default\(\)/ || /^auto_x_migrate_cn_images\(\)/ { capture=1 }
+capture { print }
+capture && /^}$/ { capture=0 }
+' "$conf")"
+eval "$image_functions"
+auto_x_get_env() {
+    local key="$1" env_file="$2" line
+    line="$(grep -m1 -E "^${key}=" "$env_file" 2>/dev/null || true)"
+    printf '%s' "${line#*=}"
+}
+auto_x_set_env() {
+    local key="$1" value="$2" env_file="$3" temporary="${env_file}.tmp"
+    awk -v key="$key" -v value="$value" '
+        BEGIN { found=0 }
+        index($0, key "=") == 1 { print key "=" value; found=1; next }
+        { print }
+        END { if (!found) print key "=" value }
+    ' "$env_file" > "$temporary"
+    mv "$temporary" "$env_file"
+}
+image_env="$(mktemp)"
+trap 'rm -f "$image_env"' EXIT
+cat > "$image_env" <<'EOF'
+BACKEND_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-backend
+XHS_WORKER_IMAGE=registry.example/custom-xhs
+CAMOUFOX_WORKER_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-camoufox-worker
+FRONTEND_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-frontend
+EOF
+auto_x_image_registry=ghcr.nju.edu.cn
+auto_x_backend_image=ghcr.nju.edu.cn/stanxu-symple/auto-x-backend
+auto_x_xhs_worker_image=ghcr.nju.edu.cn/stanxu-symple/auto-x-xhs-worker
+auto_x_camoufox_worker_image=ghcr.nju.edu.cn/stanxu-symple/auto-x-camoufox-worker
+auto_x_frontend_image=ghcr.nju.edu.cn/stanxu-symple/auto-x-frontend
+auto_x_migrate_cn_images "$image_env"
+test "$(auto_x_get_env CAMOUFOX_WORKER_IMAGE "$image_env")" = "$auto_x_camoufox_worker_image"
+test "$(auto_x_get_env XHS_WORKER_IMAGE "$image_env")" = registry.example/custom-xhs
+test "$(auto_x_get_env BACKEND_IMAGE "$image_env")" = "$auto_x_backend_image"
+test "$(auto_x_get_env FRONTEND_IMAGE "$image_env")" = "$auto_x_frontend_image"
 echo 'auto_x_camoufox=pass'
