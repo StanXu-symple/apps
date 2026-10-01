@@ -18,6 +18,19 @@ KJ_AUTO_X_CAMOUFOX_REMOTE=1
 auto_x_add_service_dependencies
 test "$AUTO_X_SERVICES" = xhs-worker,monitor-agent
 unset KJ_AUTO_X_CAMOUFOX_REMOTE
+AUTO_X_SERVICES=worker
+auto_x_add_service_dependencies
+test "$AUTO_X_SERVICES" = worker,camoufox-worker,monitor-agent
+AUTO_X_SERVICES=worker
+KJ_AUTO_X_CAMOUFOX_REMOTE=1
+auto_x_add_service_dependencies
+test "$AUTO_X_SERVICES" = worker,monitor-agent
+unset KJ_AUTO_X_CAMOUFOX_REMOTE
+AUTO_X_SERVICES=worker
+KJ_AUTO_X_TWEET_SCREENSHOT_ENABLED=false
+auto_x_add_service_dependencies
+test "$AUTO_X_SERVICES" = worker,monitor-agent
+unset KJ_AUTO_X_TWEET_SCREENSHOT_ENABLED
 AUTO_X_SERVICES=camoufox-worker
 auto_x_add_service_dependencies
 test "$AUTO_X_SERVICES" = camoufox-worker,monitor-agent
