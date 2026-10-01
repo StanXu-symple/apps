@@ -45,7 +45,7 @@ done
 # A previous non-interactive update may have seeded the browser image with
 # the default mirror. Explicit CN registry selection must repair that value.
 image_functions="$(awk '
-/^auto_x_set_env_if_default\(\)/ || /^auto_x_migrate_cn_images\(\)/ { capture=1 }
+/^auto_x_set_env_if_default\(\)/ || /^auto_x_migrate_default_images\(\)/ { capture=1 }
 capture { print }
 capture && /^}$/ { capture=0 }
 ' "$conf")"
@@ -78,7 +78,7 @@ auto_x_backend_image=ghcr.nju.edu.cn/stanxu-symple/auto-x-backend
 auto_x_xhs_worker_image=ghcr.nju.edu.cn/stanxu-symple/auto-x-xhs-worker
 auto_x_camoufox_worker_image=ghcr.nju.edu.cn/stanxu-symple/auto-x-camoufox-worker
 auto_x_frontend_image=ghcr.nju.edu.cn/stanxu-symple/auto-x-frontend
-auto_x_migrate_cn_images "$image_env"
+auto_x_migrate_default_images "$image_env"
 test "$(auto_x_get_env CAMOUFOX_WORKER_IMAGE "$image_env")" = "$auto_x_camoufox_worker_image"
 test "$(auto_x_get_env XHS_WORKER_IMAGE "$image_env")" = registry.example/custom-xhs
 test "$(auto_x_get_env BACKEND_IMAGE "$image_env")" = "$auto_x_backend_image"

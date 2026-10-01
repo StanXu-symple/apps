@@ -11,11 +11,13 @@ extract_function() {
 }
 eval "$(extract_function auto_x_update_frontend_only)"
 eval "$(extract_function docker_app_update)"
+eval "$(extract_function auto_x_migrate_default_images)"
 
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
 auto_x_install_dir="$test_dir"
 auto_x_services_file="$test_dir/.auto-x-services"
+auto_x_image_registry=ghcr.io
 printf '%s\n' 'backend,worker,ai-worker,qq-worker,auth-center,monitor-agent,frontend' > "$auto_x_services_file"
 printf '%s\n' 'IMAGE_TAG=sha-old' 'FRONTEND_IMAGE=registry.example/frontend' > "$test_dir/.env"
 
@@ -68,4 +70,32 @@ if grep -q '^compose up ' "$test_dir/calls"; then
     exit 1
 fi
 
+KJ_AUTO_X_IMAGE_REGISTRY=ghcr.io
+KJ_AUTO_X_IMAGE_TAG=sha-registry
+printf '%s\n' 'IMAGE_TAG=sha-old' \
+    'BACKEND_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-backend' \
+    'FRONTEND_IMAGE=ghcr.dockerproxy.net/stanxu-symple/auto-x-frontend' > "$test_dir/.env"
+auto_x_skip_pull_enabled() { return 0; }
+docker() { test "$*" = 'image inspect ghcr.io/stanxu-symple/auto-x-frontend:sha-registry'; }
+docker_app_update > "$test_dir/output"
+test "$(auto_x_get_env FRONTEND_IMAGE "$test_dir/.env")" = ghcr.io/stanxu-symple/auto-x-frontend
+test "$(auto_x_get_env BACKEND_IMAGE "$test_dir/.env")" = ghcr.dockerproxy.net/stanxu-symple/auto-x-backend
+test "$(auto_x_get_env IMAGE_TAG "$test_dir/.env")" = sha-old
+
+# A missing local image must restore the previous registry as well as the tag.
+auto_x_set_env FRONTEND_IMAGE ghcr.nju.edu.cn/stanxu-symple/auto-x-frontend "$test_dir/.env"
+docker() { return 1; }
+if docker_app_update > "$test_dir/output" 2>&1; then
+    echo 'missing cached frontend must fail' >&2
+    exit 1
+fi
+test "$(auto_x_get_env FRONTEND_IMAGE "$test_dir/.env")" = ghcr.nju.edu.cn/stanxu-symple/auto-x-frontend
+test "$(auto_x_get_env FRONTEND_IMAGE_TAG "$test_dir/.env")" = sha-registry
+
+auto_x_compose() { return 1; }
+if docker_app_update > "$test_dir/output" 2>&1; then
+    echo 'invalid Compose must fail' >&2
+    exit 1
+fi
+test "$(auto_x_get_env FRONTEND_IMAGE "$test_dir/.env")" = ghcr.nju.edu.cn/stanxu-symple/auto-x-frontend
 echo 'auto_x_frontend_only_update=pass'
