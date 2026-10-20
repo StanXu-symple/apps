@@ -30,7 +30,8 @@ def function(name: str) -> str:
     ("backend,ai-worker,frontend", ["docker-compose.backend.yml", "docker-compose.ai-worker.yml"]),
     ("frontend", ["docker-compose.backend.yml"]),
     ("camoufox-worker", ["docker-compose.camoufox-worker.yml"]),
-    ("worker,qq-worker", []),
+    ("worker,qq-worker", ["docker-compose.worker.yml"]),
+    ("skill-worker", ["docker-compose.skill-worker.yml"]),
 ])
 def test_selected_services_use_only_their_component_fragments(tmp_path, selected, fragments):
     saved = "backend,frontend,worker,ai-worker,qq-worker,auth-center,monitor-agent\n"
@@ -78,7 +79,8 @@ auto_x_compose config --format json
 @pytest.mark.parametrize("selected,groups", [
     ("ai-worker", "x-sentinel-control,x-sentinel_app,x-sentinel_data,x-sentinel_monitoring"),
     ("ai-worker", "operator-control,operator-app,operator-data,operator-monitoring"),
-    ("worker,qq-worker", None),
+    ("worker,qq-worker", "x-sentinel-control,x-sentinel_app,x-sentinel_data,x-sentinel_monitoring"),
+    ("skill-worker", "x-sentinel-control,x-sentinel_app,x-sentinel_data,x-sentinel_monitoring"),
 ])
 def test_ai_worker_only_prepares_control_networks_without_changing_selection(tmp_path, selected, groups):
     (tmp_path / "data/control-plane").mkdir(parents=True)
